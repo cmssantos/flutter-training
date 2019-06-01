@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:gif_search/ui/gif_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:share/share.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -14,7 +16,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<Map> _getGifs() async {
     http.Response response;
-    if (_search == null)
+    if(_search == null || _search.isEmpty)
       response = await http.get(
           "https://api.giphy.com/v1/gifs/trending?api_key=lHo7PggLWUieO7s8VQORMfYjRuvO8UJz&limit=20&rating=G");
     else
@@ -22,15 +24,6 @@ class _HomePageState extends State<HomePage> {
           "https://api.giphy.com/v1/gifs/search?api_key=lHo7PggLWUieO7s8VQORMfYjRuvO8UJz&q=$_search&limit=19&offset=$_offset&rating=G&lang=en");
 
     return json.decode(response.body);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    _getGifs().then((map) {
-      print(map);
-    });
   }
 
   @override
@@ -108,10 +101,12 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           if (_search == null || index < snapshot.data["data"].length) {
             return GestureDetector(
-              child: Image.network(
-                  snapshot.data["data"][index]["images"]["fixed_height"]["url"],
-                  height: 300.0,
-                  fit: BoxFit.cover),
+              child: FadeInImage.memoryNetwork(
+                placeholder: kTransparentImage,
+                image: snapshot.data["data"][index]["images"]["fixed_height"]["url"],
+                height: 300.0,
+                fit: BoxFit.cover,
+              ),
               onTap: () {
                 Navigator.push(
                   context,
@@ -121,6 +116,10 @@ class _HomePageState extends State<HomePage> {
                         ),
                   ),
                 );
+              },
+              onLongPress: () {
+                Share.share(snapshot.data["data"][index]["images"]
+                    ["fixed_height"]["url"]);
               },
             );
           } else {
